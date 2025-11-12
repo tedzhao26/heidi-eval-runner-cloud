@@ -21,6 +21,8 @@ push:
 
 - prefect_aws.deployments.steps.push_to_s3:
     bucket: devai-demo-prefect-flows-bucket
+    folder: eval-runner
+    
 - prefect_docker.deployments.steps.push_docker_image:
     requires: prefect-docker>=0.4.0
     image_name: "{{ build-image.image_name }}"
