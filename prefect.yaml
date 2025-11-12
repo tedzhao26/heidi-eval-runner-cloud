@@ -22,7 +22,7 @@ push:
 - prefect_aws.deployments.steps.push_to_s3:
     bucket: devai-demo-prefect-flows-bucket
     folder: eval-runner
-    
+
 - prefect_docker.deployments.steps.push_docker_image:
     requires: prefect-docker>=0.4.0
     image_name: "{{ build-image.image_name }}"
@@ -45,16 +45,16 @@ definitions:
 
 # the deployments section allows you to provide configuration for deploying flows
 deployments:
-- name: "default"
+- name: "eval-runner-deployment"
   tags: *common_tags
   schedule: null
   entrypoint: "flows/hello.py:hello"
   work_pool: *common_work_pool
 
-- name: "arthur"
-  tags: *common_tags
-  schedule: null
-  entrypoint: "flows/hello.py:hello"
-  parameters:
-    name: "Arthur"
-  work_pool: *common_work_pool
+# - name: "arthur"
+#   tags: *common_tags
+#   schedule: null
+#   entrypoint: "flows/hello.py:hello"
+#   parameters:
+#     name: "Arthur"
+#   work_pool: *common_work_pool
