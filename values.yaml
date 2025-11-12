@@ -1,0 +1,6 @@
+worker:
+  cloudApiConfig:
+    accountId: 53dc1f8f-f982-4079-844b-0cd1b65d0de8
+    workspaceId: 5e9d3404-c93b-47b2-9d2e-1b581fb222e9
+  config:
+    workPool: devai-k8s-worker
