@@ -12,7 +12,7 @@ build:
     id: build-image
     requires: prefect-docker>=0.4.0
     image_name: "{{ $PREFECT_IMAGE_NAME }}"
-    tag: latest
+    tag: "{{ get-commit-hash.stdout }}"
     dockerfile: auto
     platform: "linux/amd64"
 
