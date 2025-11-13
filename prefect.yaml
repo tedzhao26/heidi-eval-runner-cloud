@@ -31,7 +31,7 @@ push:
 # pull section allows you to provide instructions for cloning this project in remote locations
 pull:
 - prefect.deployments.steps.set_working_directory:
-    directory: /opt/prefect/flows
+    directory: /opt/prefect/heidi-eval-runner-cloud/flows
 
 # the definitions section allows you to define reusable components for your deployments
 definitions:
