@@ -3,43 +3,41 @@ name: flows
 prefect-version: 3.0.0
 
 # ------------------------------
-# Build only when requirements.txt changes
+# Build image with commit hash
 # ------------------------------
 build:
-  # Compute hash of requirements.txt to use as a tag
-  - prefect.deployments.steps.run_shell_script:
-      id: reqs-hash
-      script: shasum flows/requirements.txt | awk '{print $1}'
-      stream_output: false
-
-  # Build image tagged with that hash; skip if it already exists
-  - prefect_docker.deployments.steps.build_docker_image:
-      id: build-image
-      requires: prefect-docker>=0.4.0
-      image_name: "{{ $PREFECT_IMAGE_NAME }}"
-      tag: "reqs-{{ reqs-hash.stdout }}"
-      dockerfile: auto
-      platform: "linux/amd64"
-      skip_if_exists: true
+- prefect.deployments.steps.run_shell_script:
+    id: get-commit-hash
+    script: git rev-parse --short HEAD
+    stream_output: false
+- prefect_docker.deployments.steps.build_docker_image:
+    requires: prefect-docker >= 0.4.0
+    image_name: "{{ $PREFECT_IMAGE_NAME }}"
+    image_tag: "{{ get-commit-hash.stdout }}"
+    dockerfile: auto
 
 # ------------------------------
 # Push flow code to S3 (not Docker)
 # ------------------------------
-push:
-  - prefect_aws.deployments.steps.push_to_s3:
-      requires: prefect-aws>=0.3.0
-      bucket: devai-demo-prefect-flows-bucket
-      folder: eval-runner
+
+# push:
+#   - prefect_aws.deployments.steps.push_to_s3:
+#       id: push-code
+#       requires: prefect-aws>=0.3.0
+#       bucket: devai-demo-prefect-flows-bucket
+#       folder: eval-runner
 
 # ------------------------------
 # Pull latest code from S3 before each run
 # ------------------------------
-pull:
-  - prefect_aws.deployments.steps.pull_from_s3:
-      requires: prefect-aws>=0.3.0
-      bucket: devai-demo-prefect-flows-bucket
-      key: eval-runner
-      local_path: /opt/prefect/flows
+
+# pull:
+#   - prefect_aws.deployments.steps.pull_from_s3:
+#       id: pull-code
+#       requires: prefect-aws>=0.3.0
+#       bucket: devai-demo-prefect-flows-bucket
+#       folder: "{{ push-code.folder }}"
+#       local_path: /opt/prefect/flows
 
 # ------------------------------
 # Shared definitions for deployments
