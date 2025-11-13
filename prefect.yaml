@@ -2,42 +2,36 @@
 name: flows
 prefect-version: 3.0.0
 
-# ------------------------------
-# Build image with commit hash
-# ------------------------------
-build:
-- prefect.deployments.steps.run_shell_script:
-    id: get-commit-hash
-    script: git rev-parse --short HEAD
-    stream_output: false
-- prefect_docker.deployments.steps.build_docker_image:
-    requires: prefect-docker >= 0.4.0
-    image_name: "{{ $PREFECT_IMAGE_NAME }}"
-    image_tag: "{{ get-commit-hash.stdout }}"
-    dockerfile: auto
 
 # ------------------------------
 # Push flow code to S3 (not Docker)
 # ------------------------------
 
-# push:
-#   - prefect_aws.deployments.steps.push_to_s3:
-#       id: push-code
-#       requires: prefect-aws>=0.3.0
-#       bucket: devai-demo-prefect-flows-bucket
-#       folder: eval-runner
+push:
+  - prefect_aws.deployments.steps.push_to_s3:
+      id: push-code
+      requires: prefect-aws>=0.3.0
+      bucket: devai-demo-prefect-flows-bucket
+      folder: eval-runner
+      ignore_file: .prefectignore
+      credentials: "{{ prefect.blocks.aws-credentials.credentials }}"
+
+
 
 # ------------------------------
 # Pull latest code from S3 before each run
 # ------------------------------
 
-# pull:
-#   - prefect_aws.deployments.steps.pull_from_s3:
-#       id: pull-code
-#       requires: prefect-aws>=0.3.0
-#       bucket: devai-demo-prefect-flows-bucket
-#       folder: "{{ push-code.folder }}"
-#       local_path: /opt/prefect/flows
+pull:
+  - prefect_aws.deployments.steps.pull_from_s3:
+      id: pull-code
+      requires: prefect-aws>=0.3.0
+      bucket: devai-demo-prefect-flows-bucket
+      folder: "{{ push-code.folder }}"
+      credentials: "{{ prefect.blocks.aws-credentials.credentials }}"
+  - prefect.deployments.steps.pip_install_requirements:
+      directory: "{{ set-working-directory.directory }}"
+      requirements_file: requirements.txt
 
 # ------------------------------
 # Shared definitions for deployments
@@ -45,11 +39,11 @@ build:
 definitions:
   tags: &common_tags
     - "eks"
-    - "reqs-{{ reqs-hash.stdout }}"
+    - "{{ set-working-directory.directory }}"
   work_pool: &common_work_pool
     name: "devai-k8s-worker"
     job_variables:
-      image: "{{ build-image.image }}"  # Use the built image
+      image: "{{ $PREFECT_IMAGE_NAME }}"
 
 # ------------------------------
 # Deployments
