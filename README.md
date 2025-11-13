@@ -51,3 +51,9 @@ aws configure get region
 ## need a S3 bucket for some reason
 
 created one : devai-demo-prefect-flows-bucket
+
+
+
+
+# TODO
+- pull code from branch not bake into the image
