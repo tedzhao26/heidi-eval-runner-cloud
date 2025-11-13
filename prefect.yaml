@@ -1,4 +1,5 @@
-# Prefect project metadata
+# dev yaml, only push and pull code from s3
+
 name: flows
 prefect-version: 3.0.0
 
