@@ -1,60 +1,64 @@
-# Generic metadata about this project
+# Prefect project metadata
 name: flows
 prefect-version: 3.0.0
 
-# build section allows you to manage and build docker images
+# ------------------------------
+# Build only when requirements.txt changes
+# ------------------------------
 build:
-- prefect.deployments.steps.run_shell_script:
-    id: get-commit-hash
-    script: git rev-parse --short HEAD
-    stream_output: false
-- prefect_docker.deployments.steps.build_docker_image:
-    id: build-image
-    requires: prefect-docker>=0.4.0
-    image_name: "{{ $PREFECT_IMAGE_NAME }}"
-    tag: "{{ get-commit-hash.stdout }}"
-    dockerfile: auto
-    platform: "linux/amd64"
+  # Compute hash of requirements.txt to use as a tag
+  - prefect.deployments.steps.run_shell_script:
+      id: reqs-hash
+      script: sha1sum requirements.txt | cut -d ' ' -f 1
+      stream_output: false
 
-# push section allows you to manage if and how this project is uploaded to remote locations
+  # Build image tagged with that hash; skip if it already exists
+  - prefect_docker.deployments.steps.build_docker_image:
+      id: build-image
+      requires: prefect-docker>=0.4.0
+      image_name: "{{ $PREFECT_IMAGE_NAME }}"
+      tag: "reqs-{{ reqs-hash.stdout }}"
+      dockerfile: auto
+      platform: "linux/amd64"
+      skip_if_exists: true
+
+# ------------------------------
+# Push flow code to S3 (not Docker)
+# ------------------------------
 push:
+  - prefect_aws.deployments.steps.push_to_s3:
+      requires: prefect-aws>=0.3.0
+      bucket: devai-demo-prefect-flows-bucket
+      folder: eval-runner
 
-- prefect_aws.deployments.steps.push_to_s3:
-    bucket: devai-demo-prefect-flows-bucket
-    folder: eval-runner
-
-- prefect_docker.deployments.steps.push_docker_image:
-    requires: prefect-docker>=0.4.0
-    image_name: "{{ build-image.image_name }}"
-    tag: "{{ build-image.tag }}"
-
-# pull section allows you to provide instructions for cloning this project in remote locations
+# ------------------------------
+# Pull latest code from S3 before each run
+# ------------------------------
 pull:
-- prefect.deployments.steps.set_working_directory:
-    directory: /opt/prefect/heidi-eval-runner-cloud/
+  - prefect_aws.deployments.steps.pull_from_s3:
+      requires: prefect-aws>=0.3.0
+      bucket: devai-demo-prefect-flows-bucket
+      key: eval-runner
+      local_path: /opt/prefect/flows
 
-# the definitions section allows you to define reusable components for your deployments
+# ------------------------------
+# Shared definitions for deployments
+# ------------------------------
 definitions:
   tags: &common_tags
     - "eks"
-    - "{{ get-commit-hash.stdout }}"
+    - "reqs-{{ reqs-hash.stdout }}"
   work_pool: &common_work_pool
     name: "devai-k8s-worker"
     job_variables:
-      image: "{{ build-image.image }}"
+      image: "{{ build-image.image }}"  # Use the built image
 
-# the deployments section allows you to provide configuration for deploying flows
+# ------------------------------
+# Deployments
+# ------------------------------
 deployments:
-- name: "eval-runner-deployment"
-  tags: *common_tags
-  schedule: null
-  entrypoint: "flows/hello.py:hello"
-  work_pool: *common_work_pool
-
-# - name: "arthur"
-#   tags: *common_tags
-#   schedule: null
-#   entrypoint: "flows/hello.py:hello"
-#   parameters:
-#     name: "Arthur"
-#   work_pool: *common_work_pool
+  - name: "eval-runner-deployment"
+    tags: *common_tags
+    schedule: null
+    entrypoint: "flows/hello.py:hello"
+    work_pool: *common_work_pool
