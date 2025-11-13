@@ -39,7 +39,7 @@ pull:
 definitions:
   tags: &common_tags
     - "eks"
-    - "{{ set-working-directory.directory }}"
+    - "dev"
   work_pool: &common_work_pool
     name: "devai-k8s-worker"
     job_variables:
