@@ -17,7 +17,6 @@ push:
       credentials: "{{ prefect.blocks.aws-credentials.credentials }}"
 
 
-
 # ------------------------------
 # Pull latest code from S3 before each run
 # ------------------------------
@@ -30,7 +29,7 @@ pull:
       folder: "{{ push-code.folder }}"
       credentials: "{{ prefect.blocks.aws-credentials.credentials }}"
   - prefect.deployments.steps.pip_install_requirements:
-      directory: "{{ set-working-directory.directory }}"
+      directory: "flows"
       requirements_file: requirements.txt
 
 # ------------------------------
