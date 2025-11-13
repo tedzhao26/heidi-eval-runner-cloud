@@ -9,7 +9,7 @@ build:
   # Compute hash of requirements.txt to use as a tag
   - prefect.deployments.steps.run_shell_script:
       id: reqs-hash
-      script: sha1sum requirements.txt | cut -d ' ' -f 1
+      script: shasum requirements.txt | awk '{print $1}'
       stream_output: false
 
   # Build image tagged with that hash; skip if it already exists
